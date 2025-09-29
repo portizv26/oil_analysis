@@ -1,0 +1,31 @@
+# Core web framework
+streamlit>=1.28.0
+
+# Data manipulation and analysis
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Data formats
+pyarrow>=13.0.0  # For Parquet file support
+fastparquet>=0.8.3  # Alternative Parquet engine
+
+# Visualization
+plotly>=5.15.0
+
+# AWS S3 integration
+boto3>=1.28.0
+botocore>=1.31.0
+
+# Date/time handling (usually included with Python)
+python-dateutil>=2.8.0
+
+# Type hints support (Python < 3.9)
+typing-extensions>=4.0.0
+
+# Optional: Better logging
+loguru>=0.7.0
+
+# Development and testing (optional)
+pytest>=7.0.0
+black>=23.0.0
+isort>=5.12.0
