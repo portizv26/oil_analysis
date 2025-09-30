@@ -226,15 +226,15 @@ def display_oil_context(alert_id: str):
             style_breach_level,
             subset=['BreachLevel'] if 'BreachLevel' in oil_summary.columns else []
         )
-        st.dataframe(styled_df, use_container_width=True)
+        st.dataframe(styled_df, width='stretch')
     else:
-        st.dataframe(oil_summary, use_container_width=True)
+        st.dataframe(oil_summary, width='stretch')
     
     # Oil breach chart
     oil_data = get_oil_data_for_alert(alert_id)
     # if not oil_data.empty:
     #     fig = create_oil_breach_chart(oil_data)
-    #     st.plotly_chart(fig, use_container_width=True)
+    #     st.plotly_chart(fig, width='stretch')
 
 
 def display_telemetry_context(alert_id: str):
@@ -251,7 +251,7 @@ def display_telemetry_context(alert_id: str):
     
     # Display breach summary table
     st.markdown("**Top Telemetry Breaches**")
-    st.dataframe(breach_summary, use_container_width=True)
+    st.dataframe(breach_summary, width='stretch')
     
     # Telemetry trend charts
     telemetry_data = get_telemetry_data_for_alert(alert_id)
@@ -267,7 +267,7 @@ def display_telemetry_context(alert_id: str):
         
         for var_name in top_variables:
             fig = create_telemetry_trend_chart(telemetry_data, var_name)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 
 def display_comments_evaluation(alert_id: str):
