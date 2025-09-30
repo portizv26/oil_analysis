@@ -463,9 +463,12 @@ def get_data_stats() -> Dict[str, any]:
         
         valid_ids = comments_df.AlertId.unique()
         alerts_df = alerts_df[alerts_df.AlertId.isin(valid_ids)]
-        oil_df = oil_df[oil_df.AlertId.isin(valid_ids)]
-        tel_df = tel_df[tel_df.AlertId.isin(valid_ids)]
-        comments_df = comments_df[comments_df.AlertId.isin(valid_ids)]
+        
+        oil_ids = alerts_df.OilAlertId.unique()
+        tel_ids = alerts_df.TelAlertId.unique()
+        
+        oil_df = oil_df[oil_df.OilAlertId.isin(oil_ids)]
+        tel_df = tel_df[tel_df.TelAlertId.isin(tel_ids)]
         
         return {
             "alerts_count": len(alerts_df),
