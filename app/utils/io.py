@@ -461,6 +461,12 @@ def get_data_stats() -> Dict[str, any]:
         tel_df = load_telemetry_measurements()
         comments_df = load_ai_comments()
         
+        valid_ids = comments_df.AlertId.unique()
+        alerts_df = alerts_df[alerts_df.AlertId.isin(valid_ids)]
+        oil_df = oil_df[oil_df.AlertId.isin(valid_ids)]
+        tel_df = tel_df[tel_df.AlertId.isin(valid_ids)]
+        comments_df = comments_df[comments_df.AlertId.isin(valid_ids)]
+        
         return {
             "alerts_count": len(alerts_df),
             "oil_measurements_count": len(oil_df),
