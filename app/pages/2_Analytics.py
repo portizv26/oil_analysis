@@ -127,7 +127,7 @@ def display_grade_boxplot(df: pd.DataFrame):
     # Set y-axis range to show full grade scale
     fig.update_layout(yaxis=dict(range=[0.5, 7.5]))
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
     
     # Show count per comment type
     comment_counts = df['CommentType'].value_counts()
@@ -160,7 +160,7 @@ def display_grade_statistics(df: pd.DataFrame):
     # Display as a styled table
     st.dataframe(
         stats,
-        use_container_width=True,
+        width='stretch',
         hide_index=True
     )
 
@@ -213,7 +213,7 @@ def display_notes_analysis(df: pd.DataFrame):
     
     st.dataframe(
         notes_table,
-        use_container_width=True,
+        width='stretch',
         hide_index=True,
         column_config={
             'CommentType': 'Comment Type',
@@ -268,7 +268,7 @@ def display_detailed_evaluations(df: pd.DataFrame):
         
         st.dataframe(
             display_df,
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
             column_config={
                 'CommentType': 'Comment Type',

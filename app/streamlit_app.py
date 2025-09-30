@@ -114,7 +114,7 @@ def main():
             """)
             
             # Quick navigation to review page
-            if st.button("🚀 Start Evaluating", type="primary", use_container_width=True):
+            if st.button("🚀 Start Evaluating", type="primary", width='stretch'):
                 st.switch_page("pages/1_Review.py")
         
         with col2:
@@ -141,7 +141,7 @@ def main():
                     alerts_summary.append({"AlertId": alert_id})
                 
                 summary_df = pd.DataFrame(alerts_summary)
-                st.dataframe(summary_df, use_container_width=True)
+                st.dataframe(summary_df, width='stretch')
                 
                 if len(available_alerts) > 10:
                     st.info(f"Showing first 10 of {len(available_alerts)} total alerts with comments. Use the Review page to access all alerts.")
