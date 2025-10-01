@@ -99,31 +99,32 @@ erDiagram
 
 ```mermaid
 erDiagram
-  TECHNIQUE ||--o{ TECHNIQUE_VARIABLE : "defines"
-  TECHNIQUE_VARIABLE ||--o{ VARIABLE_LIMIT : "scoped limits"
+  TECHNIQUE ||--o{ TECHNIQUE_VARIABLE : defines
+  TECHNIQUE_VARIABLE ||--o{ VARIABLE_LIMIT : scoped_by
 
   TECHNIQUE {
-    int technique_id PK
-    string code "OIL|TEL|..."
+    int technique_id
+    string code
     string name
+    string description
   }
   TECHNIQUE_VARIABLE {
-    int technique_variable_id PK
-    int technique_id FK
+    int technique_variable_id
+    int technique_id
     string code
     string name
     string unit_of_measure
-    string datatype "float|int|categorical"
+    string datatype
   }
   VARIABLE_LIMIT {
-    int variable_limit_id PK
-    int technique_variable_id FK
-    int site_id FK nullable
-    int system_id FK nullable
-    int component_id FK nullable
-    string limit_type "upper_marginal|upper_critical|..."
-    string comparison ">,>=,<,<="
-    numeric threshold_value
+    int variable_limit_id
+    int technique_variable_id
+    int site_id
+    int system_id
+    int component_id
+    string limit_type
+    string comparison
+    float threshold_value
     datetime valid_from
     datetime valid_to
   }
@@ -135,39 +136,39 @@ erDiagram
 
 ```mermaid
 erDiagram
-  TECHNIQUE ||--o{ MEASUREMENT : "typed by"
-  TECHNIQUE_VARIABLE ||--o{ MEASUREMENT : "for variable"
-  UNIT ||--o{ MEASUREMENT : "observed on"
-  COMPONENT ||--o{ MEASUREMENT : "at component"
-  UNIT_COMPONENT ||--o{ MEASUREMENT : "for install" 
+  TECHNIQUE ||--o{ MEASUREMENT : typed_by
+  TECHNIQUE_VARIABLE ||--o{ MEASUREMENT : for_variable
+  UNIT ||--o{ MEASUREMENT : observed_on
+  COMPONENT ||--o{ MEASUREMENT : at_component
+  UNIT_COMPONENT ||--o{ MEASUREMENT : for_install
 
-  MEASUREMENT ||--|| MEASUREMENT_OIL : "1-0..1"
-  MEASUREMENT ||--|| MEASUREMENT_TELEMETRY : "1-0..1"
+  MEASUREMENT ||--|| MEASUREMENT_OIL : oil_ext
+  MEASUREMENT ||--|| MEASUREMENT_TELEMETRY : tel_ext
 
   MEASUREMENT {
-    bigint measurement_id PK
-    int technique_id FK
-    int technique_variable_id FK
-    string unit_id FK
-    int unit_component_id FK
-    int component_id FK
+    bigint measurement_id
+    int technique_id
+    int technique_variable_id
+    string unit_id
+    int unit_component_id
+    int component_id
     datetime ts
-    datetime window_start nullable
-    numeric value
+    datetime window_start
+    float value
     boolean is_limit_reached
-    string breach_level nullable
+    string breach_level
   }
   MEASUREMENT_OIL {
-    bigint measurement_id PK/FK
+    bigint measurement_id
     string sample_id
     date sample_date
-    numeric oil_meter
+    float oil_meter
   }
   MEASUREMENT_TELEMETRY {
-    bigint measurement_id PK/FK
-    numeric component_meter
-    string agg_fn "RAW|MEAN|P95|..."
-    numeric sampling_hz
+    bigint measurement_id
+    float component_meter
+    string agg_fn
+    float sampling_hz
   }
 ```
 
@@ -179,35 +180,35 @@ erDiagram
 
 ```mermaid
 erDiagram
-  TECHNIQUE ||--o{ TECHNIQUE_ALERT : "creates"
-  UNIT ||--o{ TECHNIQUE_ALERT : ""
-  COMPONENT ||--o{ TECHNIQUE_ALERT : ""
-  ALERT_CASE ||--o{ ALERT_CASE_TECHNIQUE_ALERT : ""
-  TECHNIQUE_ALERT ||--o{ ALERT_CASE_TECHNIQUE_ALERT : ""
+  TECHNIQUE ||--o{ TECHNIQUE_ALERT : from_technique
+  UNIT ||--o{ TECHNIQUE_ALERT : on_unit
+  COMPONENT ||--o{ TECHNIQUE_ALERT : on_component
+
+  ALERT_CASE ||--o{ ALERT_CASE_TECHNIQUE_ALERT : links
+  TECHNIQUE_ALERT ||--o{ ALERT_CASE_TECHNIQUE_ALERT : links
 
   ALERT_CASE {
-    bigint alert_case_id PK
-    string unit_id FK
-    int component_id FK
+    bigint alert_case_id
+    string unit_id
+    int component_id
     datetime time_start
-    string label "oil_only|telemetry_only|both|multi"
-    string status "new|in_review|resolved|dismissed"
+    string label
+    string status
   }
   TECHNIQUE_ALERT {
-    bigint technique_alert_id PK
-    int technique_id FK
-    string unit_id FK
-    int component_id FK
+    bigint technique_alert_id
+    int technique_id
+    string unit_id
+    int component_id
     datetime start_ts
     datetime end_ts
-    int primary_variable_id FK nullable
+    int primary_variable_id
     string severity
     string state
   }
   ALERT_CASE_TECHNIQUE_ALERT {
-    bigint alert_case_id FK
-    bigint technique_alert_id FK
-    PK "alert_case_id, technique_alert_id"
+    bigint alert_case_id
+    bigint technique_alert_id
   }
 ```
 
@@ -217,29 +218,29 @@ erDiagram
 
 ```mermaid
 erDiagram
-  ALERT_CASE ||--o{ AI_COMMENT : "has candidates"
-  AI_COMMENT ||--o{ COMMENT_EVIDENCE : "cites"
-  TECHNIQUE_ALERT ||--o{ COMMENT_EVIDENCE : "or links"
-  MEASUREMENT ||--o{ COMMENT_EVIDENCE : "or links"
+  ALERT_CASE ||--o{ AI_COMMENT : has_candidates
+  AI_COMMENT ||--o{ COMMENT_EVIDENCE : cites
+  TECHNIQUE_ALERT ||--o{ COMMENT_EVIDENCE : links_alert
+  MEASUREMENT ||--o{ COMMENT_EVIDENCE : links_meas
 
   AI_COMMENT {
-    bigint ai_comment_id PK
-    bigint alert_case_id FK
+    bigint ai_comment_id
+    bigint alert_case_id
     text comment_text
     string comment_type
-    char content_hash[64]
+    string content_hash
     string language
     boolean active
   }
   COMMENT_EVIDENCE {
-    bigint comment_evidence_id PK
-    bigint ai_comment_id FK
-    bigint technique_alert_id FK nullable
-    bigint measurement_id FK nullable
-    datetime window_start nullable
-    datetime window_end nullable
-    text claim_text_span nullable
-    smallint relevance "0..3"
+    bigint comment_evidence_id
+    bigint ai_comment_id
+    bigint technique_alert_id
+    bigint measurement_id
+    datetime window_start
+    datetime window_end
+    text claim_text_span
+    smallint relevance
     text note
   }
 ```
@@ -250,21 +251,21 @@ erDiagram
 
 ```mermaid
 erDiagram
-  AI_COMMENT ||--o{ REVIEW : "is reviewed by"
-  REVIEW ||--o{ REVIEW_SCORE : "dimension scores"
-  REVIEWER ||--o{ REVIEW : ""
-  RUBRIC_DIMENSION ||--o{ REVIEW_SCORE : ""
-  AI_COMMENT ||--o{ REVIEW_ADJUDICATION : "final word"
+  AI_COMMENT ||--o{ REVIEW : reviewed_by
+  REVIEW ||--o{ REVIEW_SCORE : has_scores
+  REVIEWER ||--o{ REVIEW : writes
+  RUBRIC_DIMENSION ||--o{ REVIEW_SCORE : defines
+  AI_COMMENT ||--o{ REVIEW_ADJUDICATION : final_word
 
   REVIEWER {
-    int reviewer_id PK
+    int reviewer_id
     string display_name
     string email
-    string role "rater|adjudicator|admin"
+    string role
   }
   RUBRIC_DIMENSION {
-    int rubric_dimension_id PK
-    string code "accuracy|specificity|..."
+    int rubric_dimension_id
+    string code
     string name
     string description
     int scale_min
@@ -272,28 +273,28 @@ erDiagram
     text guidelines
   }
   REVIEW {
-    bigint review_id PK
-    bigint ai_comment_id FK
-    int reviewer_id FK
+    bigint review_id
+    bigint ai_comment_id
+    int reviewer_id
     datetime created_at
-    string overall_label "accept|needs_edit|reject"
+    string overall_label
     text free_text_feedback
     text proposed_rewrite
-    string visibility "internal|client_visible"
+    string visibility
   }
   REVIEW_SCORE {
-    bigint review_score_id PK
-    bigint review_id FK
-    int rubric_dimension_id FK
-    numeric score
+    bigint review_score_id
+    bigint review_id
+    int rubric_dimension_id
+    float score
     text note
   }
   REVIEW_ADJUDICATION {
-    bigint adjudication_id PK
-    bigint ai_comment_id FK
-    int adjudicator_id FK
+    bigint adjudication_id
+    bigint ai_comment_id
+    int adjudicator_id
     datetime created_at
-    string final_decision "publish|revise|suppress"
+    string final_decision
     text rationale
   }
 ```
