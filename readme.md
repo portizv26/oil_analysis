@@ -247,6 +247,3 @@ upload_to_s3(str(eval_db), object_name="eval.db")
 5. Iterate prompts/comment generators; add more `CommentType`s based on performance insights.
 
 ---
-
-
-
