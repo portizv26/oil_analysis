@@ -155,15 +155,14 @@ def create_oil_breach_chart(oil_df: pd.DataFrame) -> go.Figure:
     
     colors = [color_map.get(level, 'gray') for level in breached['BreachLevel']]
     
-    fig = go.Figure(data=[
-        go.Bar(
-            x=breached['ElementName'],
-            y=breached['Value'],
-            marker_color=colors,
-            text=breached['BreachLevel'],
-            textposition='auto',
-        )
-    ])
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=breached['ElementName'],
+        y=breached['Value'],
+        marker=dict(color=colors),
+        text=breached['BreachLevel'],
+        textposition='auto',
+    ))
     
     fig.update_layout(
         title="Oil Elements - Breach Status",
@@ -197,15 +196,14 @@ def create_evaluation_distribution_chart(evaluations_df: pd.DataFrame) -> go.Fig
     # Count grades
     grade_counts = evaluations_df['Grade'].value_counts().sort_index()
     
-    fig = go.Figure(data=[
-        go.Bar(
-            x=grade_counts.index,
-            y=grade_counts.values,
-            marker_color='lightblue',
-            text=grade_counts.values,
-            textposition='auto',
-        )
-    ])
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=grade_counts.index,
+        y=grade_counts.values,
+        marker=dict(color='lightblue'),
+        text=grade_counts.values,
+        textposition='auto',
+    ))
     
     fig.update_layout(
         title="Distribution of Evaluation Grades",
