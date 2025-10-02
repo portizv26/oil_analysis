@@ -16,7 +16,7 @@ TELEMETRY_FILE = DATA_DIR / "telemetry_measurements.parquet"
 COMMENTS_FILE = DATA_DIR / "ai_comments.parquet"
 
 
-@st.cache_data
+# @st.cache_data
 def load_alerts() -> pd.DataFrame:
     """
     Load alerts data from Parquet file.
@@ -41,7 +41,7 @@ def load_alerts() -> pd.DataFrame:
         return pd.DataFrame()
 
 
-@st.cache_data
+# @st.cache_data
 def load_oil_measurements() -> pd.DataFrame:
     """
     Load oil measurements data from Parquet file.
@@ -62,7 +62,7 @@ def load_oil_measurements() -> pd.DataFrame:
         return pd.DataFrame()
 
 
-@st.cache_data
+# @st.cache_data
 def load_telemetry_measurements() -> pd.DataFrame:
     """
     Load telemetry measurements data from Parquet file.
@@ -83,7 +83,7 @@ def load_telemetry_measurements() -> pd.DataFrame:
         return pd.DataFrame()
 
 
-@st.cache_data
+# @st.cache_data
 def load_ai_comments() -> pd.DataFrame:
     """
     Load AI comments data from Parquet file.
@@ -99,7 +99,7 @@ def load_ai_comments() -> pd.DataFrame:
         return pd.DataFrame()
 
 
-@st.cache_data
+# @st.cache_data
 def get_alert_details(alert_id: str) -> Optional[Dict]:
     """
     Get detailed information for a specific alert.
@@ -124,7 +124,7 @@ def get_alert_details(alert_id: str) -> Optional[Dict]:
     return alert_row.iloc[0].to_dict()
 
 
-@st.cache_data
+# @st.cache_data
 def get_oil_data_for_alert(alert_id: str) -> pd.DataFrame:
     """
     Get oil measurement data for a specific alert.
@@ -151,7 +151,7 @@ def get_oil_data_for_alert(alert_id: str) -> pd.DataFrame:
     return oil_df[oil_df['OilAlertId'] == oil_alert_id].copy()
 
 
-@st.cache_data
+# @st.cache_data
 def get_telemetry_data_for_alert(alert_id: str) -> pd.DataFrame:
     """
     Get telemetry measurement data for a specific alert with time window.
@@ -193,7 +193,7 @@ def get_telemetry_data_for_alert(alert_id: str) -> pd.DataFrame:
     return filtered_df
 
 
-@st.cache_data
+# @st.cache_data
 def get_comments_for_alert(alert_id: str) -> pd.DataFrame:
     """
     Get all AI comments for a specific alert.
@@ -212,7 +212,7 @@ def get_comments_for_alert(alert_id: str) -> pd.DataFrame:
     return comments_df[comments_df['AlertId'] == alert_id].copy()
 
 
-@st.cache_data 
+# @st.cache_data 
 def get_oil_summary_table(alert_id: str) -> pd.DataFrame:
     """
     Create oil snapshot table (latest per element) for display.
@@ -248,7 +248,7 @@ def get_oil_summary_table(alert_id: str) -> pd.DataFrame:
     return summary_df
 
 
-@st.cache_data
+# @st.cache_data
 def get_telemetry_breaches_table(alert_id: str) -> pd.DataFrame:
     """
     Create telemetry top breaches table for display.
