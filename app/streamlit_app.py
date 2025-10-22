@@ -18,7 +18,7 @@ from utils.schemas import EvaluationCreate
 from utils.s3_sync import download_data_files, test_s3_connection, upload_evaluations_parquet
 
 
-@st.cache_data(ttl=3600)  # Cache for 1 hour
+# @st.cache_data(ttl=3600)  # Cache for 1 hour
 def download_s3_data():
     """Download data files from S3 if needed (cached for performance)"""
     return download_data_files()
@@ -26,7 +26,7 @@ def download_s3_data():
 
 def main():
     """Main application entry point"""
-    
+        
     # Page configuration
     st.set_page_config(
         page_title="AI Comments Evaluator",
@@ -85,22 +85,22 @@ def main():
             alerts_summary = get_alerts_summary()
             
             if "error" not in data_stats:
-                st.metric("Total Alerts", alerts_summary.get("total_alerts", 0))
+                # st.metric("Total Alerts", alerts_summary.get("total_alerts", 0))
                 st.metric("Alerts with Comments", alerts_summary.get("alerts_with_comments", 0))
                 st.metric("AI Comments", data_stats.get("ai_comments_count", 0))
-                st.metric("Unique Units", data_stats.get("unique_units", 0))
+                # st.metric("Unique Units", data_stats.get("unique_units", 0))
                 
                 # Show alerts without comments if any
-                alerts_without_comments = alerts_summary.get("alerts_without_comments", 0)
-                if alerts_without_comments > 0:
-                    st.caption(f"📝 {alerts_without_comments} alerts have no comments (filtered from evaluation)")
+                # alerts_without_comments = alerts_summary.get("alerts_without_comments", 0)
+                # if alerts_without_comments > 0:
+                #     st.caption(f"📝 {alerts_without_comments} alerts have no comments (filtered from evaluation)")
                 
                 # Comment types
-                comment_types = data_stats.get("comment_types", [])
-                if comment_types:
-                    st.write("**Comment Types:**")
-                    for ct in comment_types:
-                        st.write(f"• {ct}")
+                # comment_types = data_stats.get("comment_types", [])
+                # if comment_types:
+                #     st.write("**Comment Types:**")
+                #     for ct in comment_types:
+                #         st.write(f"• {ct}")
             else:
                 st.error(f"Error loading data stats: {data_stats['error']}")
         except Exception as e:
@@ -112,9 +112,9 @@ def main():
             db_stats = get_database_stats()
             if "error" not in db_stats:
                 st.metric("Total Evaluations", db_stats.get("total_evaluations", 0))
-                st.metric("Alerts Evaluated", db_stats.get("unique_alerts_evaluated", 0))
-                st.metric("Comments Evaluated", db_stats.get("unique_comments_evaluated", 0))
-                st.metric("Active Evaluators", db_stats.get("unique_evaluators", 0))
+                # st.metric("Alerts Evaluated", db_stats.get("unique_alerts_evaluated", 0))
+                # st.metric("Comments Evaluated", db_stats.get("unique_comments_evaluated", 0))
+                # st.metric("Active Evaluators", db_stats.get("unique_evaluators", 0))
             else:
                 st.error(f"Database error: {db_stats['error']}")
         except Exception as e:
@@ -124,12 +124,12 @@ def main():
         st.subheader("☁️ S3 Management")
         
         # Test S3 connection
-        if st.button("🔗 Test S3 Connection"):
-            with st.spinner("Testing S3 connection..."):
-                if test_s3_connection():
-                    st.success("✅ S3 connection successful")
-                else:
-                    st.error("❌ S3 connection failed")
+        # if st.button("🔗 Test S3 Connection"):
+        #     with st.spinner("Testing S3 connection..."):
+        #         if test_s3_connection():
+        #             st.success("✅ S3 connection successful")
+        #         else:
+        #             st.error("❌ S3 connection failed")
         
         # Manual data refresh
         if st.button("🔄 Refresh Data from S3"):
@@ -183,58 +183,58 @@ def main():
             **1-2 - Poor:** Very poor, irrelevant, or potentially unsafe advice
             """)
         
-        # Show available alerts for quick reference
-        try:
-            available_alerts = get_available_alerts()
-            if available_alerts:
-                st.header("📋 Available Alerts (with Comments)")
+        # # Show available alerts for quick reference
+        # try:
+        #     available_alerts = get_available_alerts()
+        #     if available_alerts:
+        #         st.header("📋 Available Alerts (with Comments)")
                 
-                # Create a summary table
-                alerts_summary = []
-                for alert_id in available_alerts[:10]:  # Show first 10
-                    alerts_summary.append({"AlertId": alert_id})
+        #         # Create a summary table
+        #         alerts_summary = []
+        #         for alert_id in available_alerts[:10]:  # Show first 10
+        #             alerts_summary.append({"AlertId": alert_id})
                 
-                summary_df = pd.DataFrame(alerts_summary)
-                st.dataframe(summary_df, width='stretch')
+        #         summary_df = pd.DataFrame(alerts_summary)
+        #         st.dataframe(summary_df, width='stretch')
                 
-                if len(available_alerts) > 10:
-                    st.info(f"Showing first 10 of {len(available_alerts)} total alerts with comments. Use the Review page to access all alerts.")
-            else:
-                st.warning("No alerts with AI comments found in the data.")
+        #         if len(available_alerts) > 10:
+        #             st.info(f"Showing first 10 of {len(available_alerts)} total alerts with comments. Use the Review page to access all alerts.")
+        #     else:
+        #         st.warning("No alerts with AI comments found in the data.")
                 
-        except Exception as e:
-            st.error(f"Error loading alerts: {e}")
+        # except Exception as e:
+        #     st.error(f"Error loading alerts: {e}")
         
-        # Additional information
-        st.header("ℹ️ About This Application")
+        # # Additional information
+        # st.header("ℹ️ About This Application")
         
-        with st.expander("System Architecture"):
-            st.markdown("""
-            **Data Sources (Read-Only):**
-            - `alerts.parquet` - Alert information with oil/telemetry links
-            - `oil_measurements.parquet` - Oil analysis results
-            - `telemetry_measurements.parquet` - Equipment sensor data  
-            - `ai_comments.parquet` - AI-generated maintenance comments
+        # with st.expander("System Architecture"):
+        #     st.markdown("""
+        #     **Data Sources (Read-Only):**
+        #     - `alerts.parquet` - Alert information with oil/telemetry links
+        #     - `oil_measurements.parquet` - Oil analysis results
+        #     - `telemetry_measurements.parquet` - Equipment sensor data  
+        #     - `ai_comments.parquet` - AI-generated maintenance comments
             
-            **Evaluation Storage:**
-            - `state/eval.db` - SQLite database for evaluator feedback
-            - Automatic daily sync to S3 (if configured)
+        #     **Evaluation Storage:**
+        #     - `state/eval.db` - SQLite database for evaluator feedback
+        #     - Automatic daily sync to S3 (if configured)
             
-            **Key Features:**
-            - Cached data loading for fast navigation
-            - Context-aware evaluation (same data for all comments per alert)
-            - Grade tracking with optional notes
-            - Multi-evaluator support
-            """)
+        #     **Key Features:**
+        #     - Cached data loading for fast navigation
+        #     - Context-aware evaluation (same data for all comments per alert)
+        #     - Grade tracking with optional notes
+        #     - Multi-evaluator support
+        #     """)
         
-        with st.expander("Performance Tips"):
-            st.markdown("""
-            - Data is cached automatically for faster loading
-            - Use the "Next Alert" button for efficient navigation
-            - Optional notes help track evaluation reasoning
-            - Database is optimized with proper indexing
-            - S3 sync preserves evaluation history
-            """)
+        # with st.expander("Performance Tips"):
+        #     st.markdown("""
+        #     - Data is cached automatically for faster loading
+        #     - Use the "Next Alert" button for efficient navigation
+        #     - Optional notes help track evaluation reasoning
+        #     - Database is optimized with proper indexing
+        #     - S3 sync preserves evaluation history
+        #     """)
 
 
 if __name__ == "__main__":

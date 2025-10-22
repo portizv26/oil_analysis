@@ -294,4 +294,7 @@ def get_all_evaluations_with_comment_types() -> List[Dict[str, Any]]:
 def ensure_database():
     """Ensure database is initialized - call this before first use"""
     if not get_db_path().exists():
+        print("Database not found, initializing...")
         init_database()
+    else:
+        print("Database already initialized.")

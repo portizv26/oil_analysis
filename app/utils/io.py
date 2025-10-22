@@ -225,6 +225,7 @@ def get_oil_summary_table(alert_id: str) -> pd.DataFrame:
         DataFrame with columns: ElementName, Value, LimitValue, BreachLevel, SampleDate
     """
     oil_df = get_oil_data_for_alert(alert_id)
+    # st.write(oil_df)
     
     if oil_df.empty:
         return pd.DataFrame()
@@ -245,11 +246,12 @@ def get_oil_summary_table(alert_id: str) -> pd.DataFrame:
     else:
         summary_df = summary_df.sort_values('ElementName')
     
-    return summary_df
+    return summary_df.reset_index(drop=True)
 
 
 # @st.cache_data
 def get_telemetry_breaches_table(alert_id: str) -> pd.DataFrame:
+    # THIS UNCTION REQUIRES MAJOR CHANGES TO CAPTURE SIGNIFFICCANT DATA TO THE ANALYSIS
     """
     Create telemetry top breaches table for display.
     
@@ -289,12 +291,11 @@ def get_telemetry_breaches_table(alert_id: str) -> pd.DataFrame:
         })
     
     breach_df = pd.DataFrame(breach_stats)
-    
     # Sort by breach severity
     if not breach_df.empty:
         breach_df = breach_df.sort_values(['AnyLimitReached', 'MaxExcess'], ascending=[False, False])
-    
-    return breach_df
+
+    return breach_df[breach_df['AnyLimitReached']]
 
 
 def get_available_alerts() -> List[str]:

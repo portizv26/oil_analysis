@@ -6,6 +6,7 @@ import os
 import boto3
 import pandas as pd
 import sqlite3
+import io
 from pathlib import Path
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError, ClientError
 from datetime import datetime
@@ -20,32 +21,31 @@ def get_s3_config() -> dict:
     Returns:
         Dictionary with S3 configuration
     """
-    # Try to get from Streamlit secrets first (for deployed apps)
+    print("Loading S3 configuration...")
     try:
+        from dotenv import load_dotenv
         import streamlit as st
-        if hasattr(st, 'secrets'):
-            config = {
-                'access_key': st.secrets.get('ACCESS_KEY'),
-                'secret_key': st.secrets.get('SECRET_KEY'), 
-                'bucket_name': st.secrets.get('BUCKET_NAME'),
-                'region': st.secrets.get('AWS_DEFAULT_REGION', 'us-east-1')
-            }
-            # If all secrets are available, use them
-            if all([config['access_key'], config['secret_key'], config['bucket_name']]):
-                return config
-    except (ImportError, AttributeError, KeyError):
-        # Streamlit not available or secrets not configured
-        pass
-    
-    # Fall back to environment variables (for local development)
-    config = {
-        'access_key': os.getenv('AWS_ACCESS_KEY_ID') or os.getenv('ACCESS_KEY'),
-        'secret_key': os.getenv('AWS_SECRET_ACCESS_KEY') or os.getenv('SECRET_KEY'),
-        'bucket_name': os.getenv('AWS_S3_BUCKET') or os.getenv('BUCKET_NAME'),
-        'region': os.getenv('AWS_DEFAULT_REGION', 'us-east-1')
-    }
-    
-    return config
+        load_dotenv()  # Load .env file if present
+        
+        # Fall back to environment variables (for local development)
+        config = {
+            'access_key': os.getenv('ACCESS_KEY') or st.secrets.get('ACCESS_KEY'),
+            'secret_key': os.getenv('SECRET_KEY') or st.secrets.get('SECRET_KEY'),
+            'bucket_name': os.getenv('BUCKET_NAME') or st.secrets.get('BUCKET_NAME'),
+            'region': os.getenv('AWS_DEFAULT_REGION', 'us-east-1') or st.secrets.get('AWS_DEFAULT_REGION', 'us-east-1')
+        }
+        
+        print(f"✅ S3 configuration loaded successfully.")
+        
+        return config
+    except Exception as e:
+        print(f"❌ Error loading S3 configuration: {e}")
+        return {
+            'access_key': None,
+            'secret_key': None,
+            'bucket_name': None,
+            'region': 'us-east-1'
+        }
 
 
 def upload_to_s3(
@@ -70,6 +70,7 @@ def upload_to_s3(
     """
     # Get configuration
     config = get_s3_config()
+    print(config)
     
     # Use provided values or fall back to environment
     bucket_name = bucket_name or config['bucket_name']
@@ -120,9 +121,9 @@ def upload_to_s3(
         s3_client.upload_file(file_path, bucket_name, object_name)
         print(f"✅ Uploaded '{file_path}' → s3://{bucket_name}/{object_name}")
         
-        # Upload versioned backup
-        s3_client.upload_file(file_path, bucket_name, versioned_object_name)
-        print(f"✅ Backup uploaded → s3://{bucket_name}/{versioned_object_name}")
+        # # Upload versioned backup
+        # s3_client.upload_file(file_path, bucket_name, versioned_object_name)
+        # print(f"✅ Backup uploaded → s3://{bucket_name}/{versioned_object_name}")
         
         return True
         
@@ -225,12 +226,41 @@ def test_s3_connection() -> bool:
         return False
 
 
+def read_from_s3(file_path, BUCKET_NAME, ACCESS_KEY, SECRET_KEY):
+    
+    ext = file_path.split('.')[-1].lower()
+    
+    try:
+        s3_client = boto3.client('s3', aws_access_key_id=ACCESS_KEY,
+                                 aws_secret_access_key=SECRET_KEY)
+        
+        # Read the file
+        obj = s3_client.get_object(Bucket=BUCKET_NAME, Key=file_path)
+        if ext == 'parquet':
+            # print(f"Reading parquet file from S3: {file_path}")
+            df = pd.read_parquet(io.BytesIO(obj['Body'].read()))
+            # print(f"File '{file_path}' successfully read from '{BUCKET_NAME}'.")
+            return df
+        else:
+            df = pd.read_csv(io.BytesIO(obj['Body'].read()))
+            # print(f"File '{file_path}' successfully read from '{BUCKET_NAME}'.")
+            return df
+            return df
+    except FileNotFoundError:
+        print(f"The file '{file_path}' was not found.")
+    except NoCredentialsError:
+        print("Credentials not available.")
+    except PartialCredentialsError:
+        print("Incomplete credentials provided.")
+    except Exception as e:
+        print(f"Error reading file from S3: {e}")
+        return None
+
+
 def download_from_s3(
     object_name: str,
     local_path: str,
-    bucket_name: Optional[str] = None,
-    access_key: Optional[str] = None,
-    secret_key: Optional[str] = None
+    config : dict,
 ) -> bool:
     """
     Download a file from S3 bucket.
@@ -245,13 +275,11 @@ def download_from_s3(
     Returns:
         True if file was downloaded successfully, False otherwise
     """
-    # Get configuration
-    config = get_s3_config()
-    
+    object_name = f'CommentEvaluator/{object_name}'
     # Use provided values or fall back to environment
-    bucket_name = bucket_name or config['bucket_name']
-    access_key = access_key or config['access_key']
-    secret_key = secret_key or config['secret_key']
+    bucket_name = config['bucket_name']
+    access_key = config['access_key']
+    secret_key = config['secret_key']
     
     # Validate required parameters
     if not all([object_name, local_path, bucket_name, access_key, secret_key]):
@@ -268,37 +296,18 @@ def download_from_s3(
     # Create directory if it doesn't exist
     Path(local_path).parent.mkdir(parents=True, exist_ok=True)
     
-    # Create S3 client
+    # Read file from S3 and save locally
     try:
-        s3_client = boto3.client(
-            's3',
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            region_name=config['region']
-        )
-    except Exception as e:
-        print(f"Error creating S3 client: {e}")
-        return False
-    
-    # Download file
-    try:
-        s3_client.download_file(bucket_name, object_name, local_path)
-        print(f"✅ Downloaded s3://{bucket_name}/{object_name} → '{local_path}'")
-        return True
-        
-    except ClientError as e:
-        error_code = e.response['Error']['Code']
-        if error_code == 'NoSuchBucket':
-            print(f"Error: Bucket '{bucket_name}' does not exist.")
-        elif error_code == 'NoSuchKey':
-            print(f"Error: Object '{object_name}' not found in bucket '{bucket_name}'.")
-        elif error_code == 'AccessDenied':
-            print(f"Error: Access denied to s3://{bucket_name}/{object_name}")
+        dataframe = read_from_s3(object_name, bucket_name, access_key, secret_key)
+        if dataframe is not None:
+            dataframe.to_parquet(local_path, index=False)
+            # print(f"      ✅ Downloaded '{object_name}' → {local_path}")
+            return True
         else:
-            print(f"Error downloading from S3: {e}")
-        return False
+            # print(f"      ❌ Failed to read '{object_name}' from S3")
+            return False
     except Exception as e:
-        print(f"Unexpected error downloading from S3: {e}")
+        print(f"Error downloading from S3: {e}")
         return False
 
 
@@ -311,6 +320,8 @@ def download_data_files() -> bool:
     """
     data_dir = Path(__file__).resolve().parents[2] / "data"
     data_dir.mkdir(exist_ok=True)
+    config = get_s3_config()
+    # print(f'Config parameters: {config}')
     
     # Required data files
     required_files = [
@@ -325,19 +336,25 @@ def download_data_files() -> bool:
     success_count = 0
     for file_name in required_files:
         local_path = data_dir / file_name
+        print(f"   ⬇️ Downloading {file_name} ")
         
         # Skip if file already exists and is recent (less than 1 day old)
         if local_path.exists():
+            print(f"      - File already exists locally.")
             file_age = datetime.now().timestamp() - local_path.stat().st_mtime
             if file_age < 86400:  # 24 hours
-                print(f"⏩ Skipping {file_name} (already up to date)")
+                print(f"      ⏩ Skipping {file_name} (already up to date)")
                 success_count += 1
                 continue
         
-        if download_from_s3(file_name, str(local_path)):
-            success_count += 1
         else:
-            print(f"❌ Failed to download {file_name}")
+            print(f"      - File does not exist locally...")
+            if download_from_s3(file_name, str(local_path), config):
+                success_count += 1
+                print(f"      ✅ Downloaded {file_name}")
+                
+            else:
+                print(f"      ❌ Failed to download {file_name}")
     
     if success_count == len(required_files):
         print(f"✅ All {len(required_files)} data files downloaded successfully")
@@ -420,7 +437,7 @@ def upload_evaluations_parquet() -> bool:
     
     try:
         # Upload to S3
-        object_name = f"evaluations/{os.path.basename(parquet_path)}"
+        object_name = f"CommentEvaluator/evaluations/{os.path.basename(parquet_path)}"
         success = upload_to_s3(parquet_path, object_name=object_name)
         
         if success:

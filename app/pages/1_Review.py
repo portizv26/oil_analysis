@@ -226,9 +226,9 @@ def display_oil_context(alert_id: str):
             style_breach_level,
             subset=['BreachLevel'] if 'BreachLevel' in oil_summary.columns else []
         )
-        st.dataframe(styled_df, width='stretch')
+        st.dataframe(styled_df)
     else:
-        st.dataframe(oil_summary, width='stretch')
+        st.dataframe(oil_summary)
     
     # Oil breach chart
     oil_data = get_oil_data_for_alert(alert_id)
@@ -250,8 +250,9 @@ def display_telemetry_context(alert_id: str):
         return
     
     # Display breach summary table
-    st.markdown("**Top Telemetry Breaches**")
-    st.dataframe(breach_summary, width='stretch')
+    st.markdown("**Telemetry Breaches**")
+    breaches_text = '\n'.join(breach_summary.VariableName.unique().tolist())
+    st.markdown(f'**{breaches_text}**')
     
     # Telemetry trend charts
     telemetry_data = get_telemetry_data_for_alert(alert_id)
@@ -263,7 +264,7 @@ def display_telemetry_context(alert_id: str):
         # Show trends for top breached variables (max 3 charts)
         top_variables = breach_summary.head(3)['VariableName'].tolist()
         
-        st.markdown("**Variable Trend Charts (Recent Window ±48h)**")
+        # st.markdown("**Variable Trend Charts (Recent Window ±48h)**")
         
         for var_name in top_variables:
             fig = create_telemetry_trend_chart(telemetry_data, var_name)
