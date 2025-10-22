@@ -15,6 +15,13 @@ sys.path.append(str(Path(__file__).parent))
 from utils.db import ensure_database, get_database_stats
 from utils.io import validate_data_files, get_data_stats, get_available_alerts, get_alerts_summary
 from utils.schemas import EvaluationCreate
+from utils.s3_sync import download_data_files, test_s3_connection, upload_evaluations_parquet
+
+
+@st.cache_data(ttl=3600)  # Cache for 1 hour
+def download_s3_data():
+    """Download data files from S3 if needed (cached for performance)"""
+    return download_data_files()
 
 
 def main():
@@ -30,6 +37,23 @@ def main():
     
     # Initialize database
     ensure_database()
+    
+    # Download data files from S3 on startup
+    with st.spinner("📥 Checking for data updates from S3..."):
+        try:
+            download_success = download_s3_data()
+            if download_success:
+                st.success("✅ Data files synchronized from S3", icon="📥")
+            else:
+                # Check if we have local files as fallback
+                file_status = validate_data_files()
+                if not all(file_status.values()):
+                    st.error("❌ Failed to download data from S3 and no local files found")
+                    st.info("Please check your S3 configuration or place data files manually in the `data/` folder")
+                else:
+                    st.warning("⚠️ Using local data files (S3 download failed)")
+        except Exception as e:
+            st.warning(f"⚠️ S3 download error: {e}. Using local files if available.")
     
     # Main header
     st.title("🔧 AI Comments Evaluator")
@@ -95,6 +119,36 @@ def main():
                 st.error(f"Database error: {db_stats['error']}")
         except Exception as e:
             st.error(f"Error getting database stats: {e}")
+        
+        # S3 Management Section
+        st.subheader("☁️ S3 Management")
+        
+        # Test S3 connection
+        if st.button("🔗 Test S3 Connection"):
+            with st.spinner("Testing S3 connection..."):
+                if test_s3_connection():
+                    st.success("✅ S3 connection successful")
+                else:
+                    st.error("❌ S3 connection failed")
+        
+        # Manual data refresh
+        if st.button("🔄 Refresh Data from S3"):
+            with st.spinner("Downloading latest data..."):
+                # Clear cache and download fresh data
+                download_s3_data.clear()
+                if download_data_files():
+                    st.success("✅ Data refreshed successfully")
+                    st.rerun()
+                else:
+                    st.error("❌ Failed to refresh data")
+        
+        # Upload evaluations as parquet
+        if st.button("📤 Export & Upload Evaluations"):
+            with st.spinner("Exporting evaluations to parquet..."):
+                if upload_evaluations_parquet():
+                    st.success("✅ Evaluations exported to S3")
+                else:
+                    st.error("❌ Failed to export evaluations")
     
     # Main content area
     if all_files_exist:

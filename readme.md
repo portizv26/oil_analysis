@@ -2,18 +2,27 @@
 # AI Comments Evaluator
 
 A lightweight web app to **evaluate AI-generated comments** about mining equipm### AI Comments
-- For the selected **AlertId**,## ☁️ Daily S3 Sync of `eval.db` & Analytics
+- For the selected **AlertId**,## ☁️ S3 Integration & Data Management
 
-We provide **two approaches** for data analysis:
+The app provides **comprehensive S3 integration** for both data input and output:
 
-### **1. In-App Analytics (Real-time)**
+### **1. Automatic Data Download on Startup**
+- **Auto-sync**: Downloads latest data files from S3 when the app starts
+- **Smart caching**: Only downloads if files are older than 24 hours
+- **Fallback support**: Uses local files if S3 is unavailable
+- **Required files**: `alerts.parquet`, `oil_measurements.parquet`, `telemetry_measurements.parquet`, `ai_comments.parquet`
+
+### **2. In-App Analytics (Real-time)**
 - Built-in **Analytics dashboard** for immediate insights
 - Interactive visualizations and filtering
 - Grade distribution analysis by comment type
 - Notes analysis and evaluation patterns
 
-### **2. External BI Analytics (Daily Export)**
-Upload the SQLite to S3 every 24h for your backend BI systems.st **all** `CommentText` (grouped by `CommentType`).
+### **3. Evaluation Data Export**
+- **Parquet export**: Convert SQLite evaluations to Parquet format
+- **Automatic upload**: Export and upload evaluations to S3
+- **Timestamped files**: Each export includes timestamp for versioning
+- **Clean-up**: Automatically removes local files after uploadst **all** `CommentText` (grouped by `CommentType`).
 - Evaluator opens each comment → reads the same context → **assigns one grade (1–7)** and optional note.
 - Submit writes a row into `state/eval.db:evaluations`.
 - "Next Alert" button iterates through pending Alerts.
@@ -169,61 +178,82 @@ Optional **Notes**: brief rationale or issues spotted.
 
 We won’t build analytics in the app. Instead, we **upload the SQLite** to S3 every 24h for your backend BI.
 
-**Python helper (uses env vars):**
-```python
-import os, boto3
-from botocore.exceptions import NoCredentialsError, PartialCredentialsError
+### **4. S3 Configuration**
 
-ACCESS_KEY = os.getenv('ACCESS_KEY')
-SECRET_KEY = os.getenv('SECRET_KEY')
-BUCKET_NAME = os.getenv('BUCKET_NAME')
+The app supports **dual configuration** for maximum flexibility:
 
-def upload_to_s3(file_path, bucket_name=BUCKET_NAME, object_name=None):
-    if object_name is None:
-        object_name = os.path.basename(file_path)
-    s3 = boto3.client('s3',
-        aws_access_key_id=ACCESS_KEY,
-        aws_secret_access_key=SECRET_KEY
-    )
-    try:
-        s3.upload_file(file_path, bucket_name, object_name)
-        print(f"Uploaded '{file_path}' → s3://{bucket_name}/{object_name}")
-    except FileNotFoundError:
-        print(f"File not found: {file_path}")
-    except NoCredentialsError:
-        print("Credentials not available.")
-    except PartialCredentialsError:
-        print("Incomplete credentials provided.")
-````
-
-**Cron example (Linux/macOS):**
-
-```
-# Edit with: crontab -e
-# Daily at 02:00 upload state/eval.db to S3 (adjust paths as needed)
-0 2 * * * /usr/bin/python3 /path/to/scripts/upload_eval_db.py
+**Local Development (.env file):**
+```env
+ACCESS_KEY=your_aws_access_key
+SECRET_KEY=your_aws_secret_key  
+BUCKET_NAME=your_s3_bucket_name
 ```
 
-Where `scripts/upload_eval_db.py` simply calls:
-
-```python
-from pathlib import Path
-from upload_to_s3 import upload_to_s3
-
-eval_db = Path(__file__).resolve().parents[1] / "state" / "eval.db"
-upload_to_s3(str(eval_db), object_name="eval.db")
+**Streamlit Cloud (Secrets):**
+```toml
+# .streamlit/secrets.toml
+ACCESS_KEY="your_aws_access_key"
+SECRET_KEY="your_aws_secret_key"
+BUCKET_NAME="your_s3_bucket_name"
 ```
 
-*(On Windows, use Task Scheduler with the same script.)*
+### **5. S3 Management Features**
+
+**In-App Controls:**
+- **Test Connection**: Verify S3 credentials and bucket access
+- **Refresh Data**: Manual download of latest data files from S3
+- **Export Evaluations**: Convert and upload evaluation data as Parquet
+
+**Command Line Tools:**
+```bash
+# Test S3 connection
+python app/utils/s3_sync.py test
+
+# Download data files
+python app/utils/s3_sync.py download
+
+# Export evaluations to parquet and upload
+python app/utils/s3_sync.py export-parquet
+
+# Upload specific file
+python app/utils/s3_sync.py upload path/to/file
+```
+
+### **6. Automated Workflows**
+
+**Data Pipeline:**
+1. **Startup**: Auto-download latest data files from S3
+2. **Evaluation**: Store evaluations in local SQLite
+3. **Export**: Manual or scheduled export of evaluations to S3 as Parquet
+4. **Analytics**: Real-time analysis of evaluation patterns
+
+**Scheduled Operations** (optional):
+```bash
+# Daily data refresh (cron/Task Scheduler)
+0 6 * * * python app/utils/s3_sync.py download
+
+# Weekly evaluation export
+0 2 * * 0 python app/utils/s3_sync.py export-parquet
+```
 
 ---
 
 ## ⚙️ Running It
 
-* Put Parquet files under `data/` following the contracts above.
-* Launch: `streamlit run app/streamlit_app.py`
-* Navigate between **Review** (evaluation) and **Analytics** (insights) pages via sidebar
-* First submission creates `state/eval.db` automatically.
+### **Setup & Configuration**
+1. **Configure S3**: Set up `.env` file or Streamlit secrets with S3 credentials
+2. **Upload Data**: Ensure required Parquet files are in your S3 bucket
+3. **Launch App**: `streamlit run app/streamlit_app.py`
+
+### **First Run**
+- App automatically downloads data files from S3 on startup
+- Creates `state/eval.db` on first evaluation submission
+- All data files cached locally for performance
+
+### **Navigation**
+- **Review Page**: Evaluate AI comments with filtering and context
+- **Analytics Page**: View insights and grade distributions  
+- **Sidebar**: System status, S3 management, and data statistics
 
 **SQLite indices recommended:**
 
