@@ -135,7 +135,7 @@ def main():
         if st.button("🔄 Refresh Data from S3"):
             with st.spinner("Downloading latest data..."):
                 # Clear cache and download fresh data
-                download_s3_data.clear()
+                # download_s3_data.clear()
                 if download_data_files():
                     st.success("✅ Data refreshed successfully")
                     st.rerun()
